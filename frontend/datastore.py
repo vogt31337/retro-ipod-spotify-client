@@ -1,11 +1,14 @@
 import redis
 import pickle
 from functools import lru_cache 
+from PlayerInterface import FormalPlayerInterface
+
 
 class Datastore():
     def __init__(self):
         self.now_playing = None
-        self.r = redis.Redis()
+        self.current_player: FormalPlayerInterface = None
+        self.r = redis.Redis(host='localhost', port=6379)
 
     def getPlaylistCount(self):
         return len(self.r.keys("playlist-index:*"))
@@ -169,7 +172,7 @@ class Datastore():
 
     def clearDevices(self):
         devices = self.r.keys("device:*")
-        if (len(devices) == 0):
+        if len(devices) == 0:
             return
         self.r.delete(*devices)
 

@@ -1,3 +1,6 @@
 spotipy
 redis
 pillow
+
+psutil
+python-mpd2
