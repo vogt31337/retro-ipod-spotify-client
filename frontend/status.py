@@ -25,3 +25,5 @@ class RootPage(MenuPage):
 
     def total_size(self):
         return 5
+
+    # TODO: Find out how to periodically update this page.
