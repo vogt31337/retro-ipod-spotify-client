@@ -1,12 +1,12 @@
 import redis
 import pickle
 from functools import lru_cache 
-from PlayerInterface import FormalPlayerInterface
+from PlayerInterface import FormalPlayerInterface, NowPlayingItem
 
 
 class Datastore():
     def __init__(self):
-        self.now_playing = None
+        self.now_playing: NowPlayingItem = None
         self.current_player: FormalPlayerInterface = None
         self.r = redis.Redis(host='localhost', port=6379)
 

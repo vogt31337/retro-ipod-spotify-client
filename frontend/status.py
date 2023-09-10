@@ -3,8 +3,8 @@ from view_model import MenuPage, LineItem
 
 
 class RootPage(MenuPage):
-    def __init__(self, previous_page):
-        super().__init__("Status", previous_page, has_sub_page=True, datastore=None)
+    def __init__(self, previous_page, datastore):
+        super().__init__("Status", previous_page, has_sub_page=True, datastore=datastore)
 
     def page_content(self, index):
         if index == 0:

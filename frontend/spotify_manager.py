@@ -3,7 +3,7 @@ from spotipy.oauth2 import SpotifyOAuth
 import threading
 import time
 import json
-from PlayerInterface import FormalPlayerInterface
+from PlayerInterface import FormalPlayerInterface, NowPlayingItem
 
 class UserDevice():
     __slots__ = ['id', 'name', 'is_active']
@@ -449,7 +449,8 @@ class spotify_manager(FormalPlayerInterface):
         return SearchResults(tracks, artists, albums, album_track_map)
     
     def refresh_now_playing(self):
-        self.datastore.now_playing = self.get_now_playing()
+        # self.datastore.now_playing = self.get_now_playing()
+        pass
     
     def play_next(self):
         global sleep_time
@@ -483,3 +484,6 @@ class spotify_manager(FormalPlayerInterface):
             self.pause()
         else:
             self.resume()
+
+    def update_status(self) -> NowPlayingItem:
+        return None

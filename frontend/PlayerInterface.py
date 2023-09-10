@@ -1,4 +1,21 @@
 import abc
+from dataclasses import dataclass
+
+@dataclass
+class NowPlayingItem:
+    name: str           # Title or track label
+    artist: str         # Artist currently playing
+    album: str          # Album title
+    context_name: str   # The context from which the track is, e.g. playlist name
+    state: str          # Current state: play, pause, stop
+    is_repeat: bool
+    is_random: bool
+    is_single: bool
+    timestamp: float    # Timestamp since start of the song in seconds
+    progress: float     # Progress in seconds
+    duration: float     # Duration in seconds
+    track_index: int    # Track number on album
+    track_total: int    # Total number of tracks on album
 
 
 class FormalPlayerInterface(metaclass=abc.ABCMeta):
@@ -44,4 +61,8 @@ class FormalPlayerInterface(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def play_artist(self, artist_uri):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def update_status(self) -> NowPlayingItem:
         raise NotImplementedError

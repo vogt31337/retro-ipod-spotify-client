@@ -70,8 +70,8 @@ class SearchRendering:
 
 
 class SearchResultsPage(MenuPage):
-    def __init__(self, previous_page, results):
-        super().__init__("Search Results", previous_page, has_sub_page=True)
+    def __init__(self, previous_page, results, datastore):
+        super().__init__("Search Results", previous_page, has_sub_page=True, datastore=datastore)
         self.results = results
         tracks, albums, artists = len(results.tracks), len(results.albums), len(results.artists)
         # Add 1 to each count (if > 0) to make room for section header line items
@@ -96,11 +96,11 @@ class SearchResultsPage(MenuPage):
         elif self.tracks > 0 and index < self.header_indices[1]:
             track = self.results.tracks[index - 1]
             command = NowPlayingCommand(lambda: spotify_manager.play_track(track.uri))
-            return NowPlayingPage(self, track.title, command, datastore)
+            return NowPlayingPage(self, track.title, command, self.datastore)
         elif self.albums > 0 and index < self.header_indices[2]:
             artist = self.results.artists[index - (self.tracks + 1)]
             command = NowPlayingCommand(lambda: spotify_manager.play_artist(artist.uri))
-            return NowPlayingPage(self, artist.name, command, datastore)
+            return NowPlayingPage(self, artist.name, command, self.datastore)
         else:
             album = self.results.albums[index - (self.artists + self.tracks + 1)]
             tracks = self.results.album_track_map[album.uri]

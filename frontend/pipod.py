@@ -166,7 +166,7 @@ def update_search(q, ch, loading, results):
     search_page = app.frames[SearchFrame]
     if results is not None:
         page.render().unsubscribe()
-        page = SearchResultsPage(page, results)
+        page = SearchResultsPage(page, results, DATASTORE)
         render(app, page.render())
     else:
         search_page.update_search(q, ch, loading)
@@ -277,20 +277,18 @@ def app_main_loop():
 
 class RootPage(MenuPage):
     def __init__(self, previous_page):
-        super().__init__("PiPod", previous_page, has_sub_page=True)
-        self.pages = [
+        super().__init__("PiPod", previous_page, has_sub_page=True, datastore=DATASTORE)
+        self.pages: list = [
             SpotifyPage(self, datastore=DATASTORE),
             MPDPage(self, datastore=DATASTORE),
             SearchPage(self),
-            StatusPage(self),
-            NowPlayingPage(self, "Now Playing", NowPlayingCommand(), DATASTORE)
+            StatusPage(self, datastore=DATASTORE),
+            NowPlayingPage(self, "Now Playing", None, DATASTORE)
         ]
         self.index = 0
         self.page_start = 0
 
     def get_pages(self):
-        if not DATASTORE.now_playing:
-            return self.pages[0:-1]
         return self.pages
 
     def total_size(self):

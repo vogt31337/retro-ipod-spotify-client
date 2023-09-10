@@ -3,7 +3,8 @@ from functools import lru_cache
 from view_model import MenuPage, LineItem
 from nowplaying import NowPlayingPage, NowPlayingCommand
 from config import config
-from mpd_manager import mpd_manager
+from mpd_manager import mpd_manager, track_to_nowplaying
+import time
 
 
 class SingleArtistTrackPage(MenuPage):
@@ -102,25 +103,28 @@ class SinglePlaylistPage(MenuPage):
                                            u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
                                            "]+", flags=re.UNICODE)
 
-        super().__init__(regex_pattern.sub(r'', playlist['title']), previous_page, has_sub_page=True, datastore=datastore)
+        super().__init__(regex_pattern.sub(r'', playlist['playlist']), previous_page, has_sub_page=True, datastore=datastore)
         self.playlist = playlist
         self.tracks = None
 
     def get_tracks(self):
         if self.tracks is None:
-            self.tracks = self.datastore.current_player.listplaylist(self.playlist.uri)
+            self.tracks = self.datastore.current_player.listplaylist(self.playlist['playlist'])
         return self.tracks
 
     def total_size(self):
-        return self.playlist.track_count
+        return len(self.get_tracks())
 
     def page_at(self, index):
         track = self.get_tracks()[index]
         if type(self.datastore.current_player) is not mpd_manager:
             self.datastore.current_player = mpd_manager()
 
-        command = NowPlayingCommand(lambda: self.datastore.current_player.play_from_playlist(self.playlist.uri, track.uri, None))
-        return NowPlayingPage(self, track.title, command, self.datastore)
+        np = track_to_nowplaying(track, self.playlist['playlist'])
+        self.datastore.now_playing = np
+
+        command = NowPlayingCommand(lambda: self.datastore.current_player.play_from_playlist(self.playlist['playlist'], index, None))
+        return NowPlayingPage(self, np.name + ' - ' + np.artist, command, self.datastore)
 
 
 class PlaylistsPage(MenuPage):
@@ -199,7 +203,7 @@ class RootPage(MenuPage):
     def __init__(self, previous_page, datastore):
         super().__init__("MPD", previous_page, has_sub_page=True, datastore=datastore)
         self.datastore.current_player = mpd_manager()
-        self.pages = [
+        self.pages: list = [
             ArtistsPage(self, datastore),
             # AlbumsPage(self, datastore=datastore),
             # NewReleasesPage(self),
@@ -207,14 +211,12 @@ class RootPage(MenuPage):
             # ShowsPage(self),
             # SearchPage(self),
             ConfigPage(self, datastore=datastore),
-            NowPlayingPage(self, "Now Playing", NowPlayingCommand(), datastore)
+            NowPlayingPage(self, "Now Playing", None, datastore)
         ]
         self.index = 0
         self.page_start = 0
 
     def get_pages(self):
-        if not self.datastore.now_playing:
-            return self.pages[0:-1]
         return self.pages
 
     def total_size(self):

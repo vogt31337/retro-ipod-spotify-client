@@ -2,9 +2,10 @@ import re as re
 from config import config
 from nowplaying import NowPlayingPage, NowPlayingCommand
 import threading
+from datastore import Datastore
 
 
-def run_async(self, fun):
+def run_async(fun):
     threading.Thread(target=fun, args=()).start()
 
 
@@ -16,7 +17,7 @@ class LineItem:
 
 
 class MenuRendering:
-    def __init__(self, header="", lines=[], page_start=0, total_count=0):
+    def __init__(self, header="", lines=[], page_start=0, total_count=0, now_playing=None):
         # super().__init__(config.MENU_RENDER_TYPE)
         self.type = config.MENU_RENDER_TYPE
         self.lines = lines
@@ -26,7 +27,7 @@ class MenuRendering:
 
         # TODO: Fix concept of now playing, since it will be able to hold more than just spoitfy
         # self.now_playing = spotify_manager.DATASTORE.now_playing
-        self.now_playing = None
+        self.now_playing = now_playing
 
         # TODO: use a python library for stats and stuff
         # self.has_internet = spotify_manager.has_internet
@@ -37,14 +38,14 @@ class MenuRendering:
 
 
 class MenuPage:
-    def __init__(self, header, previous_page, has_sub_page, is_title=False, datastore=None):
+    def __init__(self, header, previous_page, has_sub_page, is_title=False, datastore: Datastore=None):
         self.index = 0
         self.page_start = 0
         self.header = header
         self.has_sub_page = has_sub_page
         self.previous_page = previous_page
         self.is_title = is_title
-        self.datastore = datastore
+        self.datastore: Datastore = datastore
 
     def total_size(self):
         return 0
@@ -113,7 +114,12 @@ class MenuPage:
             else:
                 lines.append(LineItem())
 
-        return MenuRendering(lines=lines, header=self.header, page_start=self.index, total_count=total_size)
+        now_playing = None
+        if self.datastore and self.datastore.current_player:
+            now_playing = self.datastore.current_player.update_status()
+
+        return MenuRendering(lines=lines, header=self.header, page_start=self.index, total_count=total_size,
+                             now_playing=now_playing)
 
 
 class SinglePlaylistPage(MenuPage):

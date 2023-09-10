@@ -3,14 +3,13 @@ from config import config
 from PIL import ImageTk, Image
 import time
 from datetime import timedelta
-
 from flattenAlpha import flattenAlpha
 from marquee import Marquee
-from PlayerInterface import FormalPlayerInterface
+from PlayerInterface import FormalPlayerInterface, NowPlayingItem
 import threading
 
 
-def run_async(self, fun):
+def run_async(fun):
     threading.Thread(target=fun, args=()).start()
 
 
@@ -60,7 +59,7 @@ class NowPlayingFrame(tk.Frame):
         self.cached_album = None
         self.cached_artist = None
 
-    def update_now_playing(self, now_playing):
+    def update_now_playing(self, now_playing: NowPlayingItem):
         if not self.inflated:
             parent_width = self.winfo_width()
             if parent_width > 2:
@@ -73,40 +72,49 @@ class NowPlayingFrame(tk.Frame):
                 self.inflated = True
         if not now_playing:
             return
-        self.track_label.set_text(now_playing['name'])
-        artist = now_playing['artist']
+        self.track_label.set_text(now_playing.name)
+        artist = now_playing.artist
         if self.cached_artist != artist:
             truncd_artist = artist if len(artist) < 20 else artist[0:17] + "..."
             self.artist_label.configure(text=truncd_artist)
             self.cached_artist = artist
-        album = now_playing['album']
+        album = now_playing.album
         if self.cached_album != album:
             truncd_album = album if len(album) < 20 else album[0:17] + "..."
             self.album_label.configure(text=truncd_album)
             self.cached_album = album
-        context_name = now_playing['context_name']
+        context_name = now_playing.context_name
         truncd_context = context_name if context_name else "Now Playing"
         truncd_context = truncd_context if len(truncd_context) < 20 else truncd_context[0:17] + "..."
         self.header_label.configure(text=truncd_context)
-        update_delta = 0 if not now_playing['is_playing'] else (time.time() - now_playing["timestamp"]) * 1000.0
-        adjusted_progress_ms = now_playing['progress'] + update_delta
-        adjusted_remaining_ms = max(0, now_playing['duration'] - adjusted_progress_ms)
+
+        # TODO: Figure this out, since it seems to be needed for spotify...
+        # update_delta = 0 if not now_playing.is_playing else (time.time() - now_playing.timestamp) * 1000.0
+        # adjusted_progress_ms = now_playing.progress + update_delta
+        # adjusted_remaining_ms = max(0, now_playing.duration - adjusted_progress_ms)
+
+        adjusted_progress_ms = now_playing.progress
+        adjusted_remaining_ms = now_playing.duration
+
         if self.update_time:
-            progress_txt = ":".join(str(timedelta(milliseconds=adjusted_progress_ms)).split('.')[0].split(':')[1:3])
+            # progress_txt = ":".join(str(timedelta(milliseconds=adjusted_progress_ms)).split('.')[0].split(':')[1:3])
+            progress_txt = ":".join(str(timedelta(seconds=adjusted_progress_ms)).split('.')[0].split(':')[1:3])
             remaining_txt = "-" + ":".join(
-                str(timedelta(milliseconds=adjusted_remaining_ms)).split('.')[0].split(':')[1:3])
+                # str(timedelta(milliseconds=adjusted_remaining_ms)).split('.')[0].split(':')[1:3])
+                str(timedelta(seconds=adjusted_remaining_ms)).split('.')[0].split(':')[1:3])
             self.elapsed_time.configure(text=progress_txt)
             self.remaining_time.configure(text=remaining_txt)
         self.update_time = not self.update_time
+
         if self.inflated:
-            adjusted_progress_pct = min(1.0, adjusted_progress_ms / now_playing['duration'])
+            adjusted_progress_pct = min(1.0, adjusted_progress_ms / now_playing.duration)
             self.progress_frame.coords(self.progress, self.progress_start_x, 0,
                                        self.progress_width * adjusted_progress_pct + self.progress_start_x,
                                        int(72 * config.SCALE))
-        if (now_playing['track_index'] < 0):
+        if now_playing.track_index < 0:
             self.context_label.configure(text="")
             return
-        context_str = str(now_playing['track_index']) + " of " + str(now_playing['track_total'])
+        context_str = str(now_playing.track_index) + " of " + str(now_playing.track_total)
         self.context_label.configure(text=context_str)
 
 
@@ -154,7 +162,7 @@ class NowPlayingPage:
         return self.previous_page
 
     def render(self):
-        if not self.command.has_run:
+        if self.command and not self.command.has_run:
             self.command.run()
         return self.live_render
 
@@ -181,7 +189,7 @@ class NowPlayingRendering:
             return
         if self.after_id:
             self.app.after_cancel(self.after_id)
-        self.callback(self.datastore.now_playing)
+        self.callback(self.datastore.current_player.update_status())
         self.after_id = self.app.after(500, lambda: self.refresh())
 
     def unsubscribe(self):

@@ -1,17 +1,66 @@
 import mpd
-# from mpd.asyncio import MPDClient
+import time
+from datastore import Datastore
 from config import config
-from PlayerInterface import FormalPlayerInterface
+from PlayerInterface import FormalPlayerInterface, NowPlayingItem
+
+
+def track_to_nowplaying(track, state, playlist_name='', progress=0., timestamp=time.time()) -> NowPlayingItem:
+    context_name = playlist_name
+    timestamp = timestamp
+    duration = float(track['duration'])
+    track_index = -1
+    track_total = 0
+
+    title = track['file']
+    if 'title' in track:
+        title = track['title']
+
+    artist = 'Unknown artist'
+    if 'artist' in track:
+        artist = track['artist']
+
+    album = 'Unknown album'
+    if 'album' in track:
+        album = track['album']
+
+    is_repeat = False
+    if 'repeat' in track and track['repeat'] == '1':
+        is_repeat = True
+
+    is_random = False
+    if 'random' in track and track['random'] == '1':
+        is_random = True
+
+    is_single = False
+    if 'single' in track and track['single'] == '1':
+        is_single = True
+
+    name = title
+    return NowPlayingItem(name=name,
+                          artist=artist,
+                          album=album,
+                          context_name=context_name,
+                          state=state,
+                          timestamp=timestamp,
+                          progress=progress,
+                          duration=duration,
+                          track_index=track_index,
+                          track_total=track_total,
+                          is_repeat=is_repeat,
+                          is_random=is_random,
+                          is_single=is_single)
 
 
 class mpd_manager(FormalPlayerInterface):
-    def __init__(self, datastore=None):
+    def __init__(self, datastore: Datastore = None):
         # self.client = MPDClient()
-        self.client = mpd.MPDClient()
-        self.datastore = datastore
-        pass
+        self.client: mpd.MPDClient = mpd.MPDClient()
+        self.datastore: Datastore = datastore
+        self.current_playlist: list = None
+        self.current_playlist_name: str = 'Queue'
 
-    def set_datastore(self, datastore):
+    def set_datastore(self, datastore: Datastore):
         self.datastore = datastore
 
     def check_mpd_connected(self):
@@ -33,7 +82,9 @@ class mpd_manager(FormalPlayerInterface):
         :return:
         """
         self.check_mpd_connected()
-        return self.client.listplaylist(playlist)
+        self.current_playlist = self.client.listplaylistinfo(playlist)
+        self.current_playlist_name = playlist
+        return self.current_playlist
 
     def getArtist(self, name):
         """
@@ -98,7 +149,29 @@ class mpd_manager(FormalPlayerInterface):
         self.client.stop()
 
     def play_from_playlist(self, playlist_uri, track_uri, device_id=None):
-        raise NotImplementedError
+        self.check_mpd_connected()
+        self.client.load(playlist_uri)
+        self.client.play(track_uri)
 
     def play_from_show(self, show_uri, episode_uri, device_id=None):
         raise NotImplementedError
+
+    def update_status(self) -> NowPlayingItem:
+        status = self.client.status()
+        if not self.current_playlist:
+            self.current_playlist = self.client.playlistinfo()
+        track = self.current_playlist[int(status['song'])]
+
+        time = 0.
+        if 'time' in track:
+            time = track['time']
+
+        elapsed = -1.
+        if 'elapsed' in status:
+            elapsed = float(status['elapsed'])
+
+        return track_to_nowplaying(track,
+                                   playlist_name=self.current_playlist_name,
+                                   progress=elapsed,
+                                   timestamp=time,
+                                   state=status['state'])

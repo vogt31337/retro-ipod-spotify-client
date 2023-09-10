@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import ImageTk, Image
 from config import config
 from flattenAlpha import flattenAlpha
+from nowplaying import NowPlayingItem
 
 
 class StartPage(tk.Frame):
@@ -13,6 +14,7 @@ class StartPage(tk.Frame):
         self.play_image = ImageTk.PhotoImage(flattenAlpha(Image.open('assets/pod_play.png')))
         self.pause_image = ImageTk.PhotoImage(flattenAlpha(Image.open('assets/pod_pause.png')))
         self.space_image = ImageTk.PhotoImage(flattenAlpha(Image.open('assets/pod_space.png')))
+        self.stop_image =  ImageTk.PhotoImage(flattenAlpha(Image.open('assets/pod_stop.png')))
         self.wifi_image = ImageTk.PhotoImage(flattenAlpha(Image.open('assets/pod_wifi.png')))
         self.configure(bg=config.SPOT_BLACK)
         header_container = tk.Canvas(self, bg=config.SPOT_BLACK, highlightthickness=0, relief='ridge')
@@ -73,12 +75,18 @@ class StartPage(tk.Frame):
     def hide_scroll(self):
         self.scrollFrame.grid_forget()
 
-    def set_header(self, header, now_playing=None, has_wifi=False):
+    def set_header(self, header, now_playing: NowPlayingItem=None, has_wifi=False):
         truncd_header = header if len(header) < 20 else header[0:17] + "..."
         self.header_label.configure(text=truncd_header)
         play_image = self.space_image
         if now_playing is not None:
-            play_image = self.play_image if now_playing['is_playing'] else self.pause_image
+            if now_playing.state == 'play':
+                play_image = self.play_image
+            elif now_playing.state == 'pause':
+                play_image = self.pause_image
+            elif now_playing.state == 'stop':
+                play_image = self.stop_image
+            # play_image = self.play_image if now_playing.is_playing else self.pause_image
         self.play_indicator.configure(image=play_image)
         self.play_indicator.image = play_image
         wifi_image = self.wifi_image if has_wifi else self.space_image

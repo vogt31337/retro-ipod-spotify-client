@@ -1,3 +1,8 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class config:
     SCALE = 1
     TEXT_TRUNCATION = 25
@@ -5,9 +10,9 @@ class config:
     LARGEFONT = ("ChicagoFLF", int(72 * SCALE))
     MED_FONT = ("ChicagoFLF", int(52 * SCALE))
 
-    SPOT_GREEN = "#1DB954"
-    SPOT_BLACK = "#191414"
-    SPOT_WHITE = "#FFFFFF"
+    SPOT_GREEN = os.getenv('SPOT_GREEN', "#1DB954")
+    SPOT_BLACK = os.getenv('SPOT_BLACK', "#191414")
+    SPOT_WHITE = os.getenv('SPOT_WHITE', "#FFFFFF")
 
     UDP_IP = "127.0.0.1"
     UDP_PORT = 9090
@@ -45,6 +50,6 @@ class config:
     LINE_HIGHLIGHT = 1
     LINE_TITLE = 2
 
-    MPD_URL = "127.0.0.1"
-    MPD_PORT = 6600
-    MPD_PW = None
+    MPD_URL = os.getenv("MPD_URL", "127.0.0.1")
+    MPD_PORT = int(os.getenv("MPD_PORT", 6600))
+    MPD_PW = os.getenv('MPD_PW', None)

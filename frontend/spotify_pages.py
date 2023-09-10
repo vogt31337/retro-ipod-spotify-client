@@ -30,8 +30,7 @@ class ShowsPage(MenuPage):
 
 class PlaylistsPage(MenuPage):
     def __init__(self, previous_page, datastore):
-        super().__init__(self.get_title(), previous_page, has_sub_page=True)
-        self.datastore = datastore
+        super().__init__(self.get_title(), previous_page, has_sub_page=True, datastore=datastore)
         self.playlists = self.get_content()
         self.num_playlists = len(self.playlists)
         self.playlists.sort(key=self.get_idx)  # sort playlists to keep order as arranged in Spotify library
@@ -190,7 +189,7 @@ class SavedTracksPage(MenuPage):
 
 class RootPage(MenuPage):
     def __init__(self, previous_page, datastore=None):
-        super().__init__("Spotify", previous_page, has_sub_page=True)
+        super().__init__("Spotify", previous_page, has_sub_page=True, datastore=datastore)
         SPOTIFY_MANAGER.set_datastore(datastore)
         self.pages = [
             ArtistsPage(self, datastore),

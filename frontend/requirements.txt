@@ -1,6 +1,6 @@
 spotipy
 redis
 pillow
-
+python-dotenv
 psutil
 python-mpd2
